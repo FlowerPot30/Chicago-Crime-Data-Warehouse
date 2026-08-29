@@ -45,28 +45,8 @@ for the following reasons:
   - MERGE INTO / Upsert
   - SCD Type 2
   - Star Schema design
-- If real, genuine real-time streaming practice is wanted, it should be a **separate**
-  project using a data source that is naturally continuous (e.g., USGS Earthquake API,
-  Binance API) — not this project.
 
-## 4. Tools Considered and Deliberately Excluded
-
-These tools weren't excluded because they're bad — they simply don't fit **this project's
-scope**. Explaining these trade-offs in the portfolio also demonstrates maturity in system
-design decisions:
-
-| Tool | Reason for exclusion |
-|---|---|
-| Azure Synapse Pipelines | Redundant with ADF — both handle the same orchestration role, only one is needed |
-| Delta Live Tables (DLT) | Redundant with the Notebook + Workflows design already in place. Adopting DLT would mean rewriting the pipeline from scratch, not adding it on top |
-| Databricks Lakehouse Monitoring | Designed for ML/streaming data drift monitoring, not a good fit for a small batch job like this |
-| Autoscaling Cluster | Chicago Crime data volume (a few thousand rows/day) isn't large enough to benefit from autoscaling |
-| pytest | Dropped per the user's latest request, to keep the scope focused |
-
-> Note: this list isn't set in stone — if project scope changes in the future
-> (e.g., adding a test suite), it can be revisited.
-
-## 5. Measurable Goals (for the portfolio)
+## 4. Measurable Goals (for the portfolio)
 
 - Demonstrate practical, hands-on understanding of the Medallion Architecture
   (Bronze/Silver/Gold), not just theory
