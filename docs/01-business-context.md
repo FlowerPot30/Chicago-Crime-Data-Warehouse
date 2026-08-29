@@ -20,9 +20,6 @@ for the following reasons:
   - MERGE INTO / Upsert
   - SCD Type 2
   - Star Schema design
-- If real, genuine real-time streaming practice is wanted, it should be a **separate**
-  project using a data source that is naturally continuous (e.g., USGS Earthquake API,
-  Binance API) — not this project.
 
 ## 3. Tools Considered and Deliberately Excluded
 
