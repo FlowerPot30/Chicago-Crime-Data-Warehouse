@@ -10,7 +10,7 @@ This project starts from real business questions about crime in Chicago, not fro
 
 **Not done yet**
 -  [`Data Architecture`](./docs/data_architecture)
--  [`Design Decisions](./docs/design_decisions)
+-  [`Design Decisions`](./docs/design_decisions)
 -  [`Component Breakdown`](./docs/component_breakdown)
 
 ## 🏗️ Data Architecture
