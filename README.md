@@ -9,6 +9,7 @@ This project starts from real business questions about crime in Chicago, not fro
 ## 📂 Table of Contents
 
 **Not done yet**
+-  [`Business Context`](./docs/business_context)
 -  [`Data Architecture`](./docs/data_architecture)
 -  [`Design Decisions`](./docs/design_decisions)
 -  [`Component Breakdown`](./docs/component_breakdown)
