@@ -1,6 +1,6 @@
 # 💽 Source Data Dictionary
 
-## 🗂️ Crimes - 2001 to Present Data Dictionary
+## 🗂️ Crimes - 2001 to Present
 
 |Item|Detail|
 |---|---|
