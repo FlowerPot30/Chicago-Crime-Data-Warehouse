@@ -9,12 +9,12 @@ This project starts from real business questions about crime in Chicago, not fro
 ## 📂 Table of Contents
 
 **Not done yet**
--  [`Business Context`](./docs/business_context.md)
--  [`Source Data Dictionary`](./docs/sources_data_dictionary.md)
--  [`Star Schema Design`](./docs/star_schema_design.md)
--  [`Data Architecture`](./docs/data_architecture)
--  [`Design Decisions`](./docs/design_decisions)
--  [`Component Breakdown`](./docs/component_breakdown)
+-  [`01_Business Context`](./docs/01_business_context.md)
+-  [`02_Source Data Dictionary`](./docs/02_sources_data_dictionary.md)
+-  [`03_Star Schema Design`](./docs/03_star_schema_design.md)
+-  [`04_Data Architecture`](./docs/04_data_architecture.md)
+-  [`05_Design Decisions`](./docs/05_design_decisions.md)
+-  [`06_Component Breakdown`](./docs/06_component_breakdown.md)
 
 ## 🏗️ Data Architecture
 **Not done yet**
