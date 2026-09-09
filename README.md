@@ -10,7 +10,7 @@ This project starts from real business questions about crime in Chicago, not fro
 
 **Not done yet**
 -  [`Business Context`](./docs/business_context.md)
--  [`Source Data Dictionary`](./docs/source_data_dictionary.md)
+-  [`Source Data Dictionary`](./docs/sources_data_dictionary.md)
 -  [`Star Schema Design`](./docs/star_schema_design.md)
 -  [`Data Architecture`](./docs/data_architecture)
 -  [`Design Decisions`](./docs/design_decisions)
