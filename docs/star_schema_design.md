@@ -21,6 +21,27 @@ to the existing business process (it has no fact table of its own, and no recurr
 
 ## Step 3 - Identify the Dimensions
 
-|Dimens
+|Dimension|Business question it answers|SCD Type|
+|---|---|---|
+|dim_date|Time patterns (weekday/weekend, monthly, quarterly trend)|Type 0|
+|dim_location|Spatial patterns at the beat/district/ward/location-type level|Type 1|
+|dim_crime_type|Which crime types occur most often, and where|Type 1|
+|dim_arrest_status|How arrest rate changes over time, delayed arrests|Type 2|
+
+ **Boundaries - Community Areas**
+ **Crimes - 2001 to Present**
+
+### 3.1 dim_date
+**Grain**: one row per calendar day.
+|Column|Source|How it's derived|
+|---|---|---|
+|date_key|derived|Surrogate key, format `DDMMYYYY`, generated from `full_date`|
+|full_date|date (Chicago Crime 2001 - Present)|Cast to a pure date type|
+|year| derived from `full_date`|Extracted from `full_date`|
+|month| derived from `full_date`|Extracted from `full_date`|
+|quarter
+
+
+
 
 
