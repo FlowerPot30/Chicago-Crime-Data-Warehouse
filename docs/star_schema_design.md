@@ -1,4 +1,4 @@
-<img width="674" height="119" alt="image" src="https://github.com/user-attachments/assets/532e8c77-b3ba-4a6c-b29f-aeed809c5335" /># ⭐️ Star Schema Design (Gold Layer) - Kimball's 4-Step Dimensional Design Process
+# ⭐️ Star Schema Design (Gold Layer) - Kimball's 4-Step Dimensional Design Process
 
 This document designs the Gold Layer Star Schema following Ralph Kimball's 4-step process (Select the Business Process -> 
 Declare the Grain -> Identify the Dimensions -> Identify the Facts), so every design decision has a stated reason instead of just listing tables.
