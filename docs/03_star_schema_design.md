@@ -107,9 +107,12 @@ to the existing business process (it has no fact table of its own, and no recurr
 |`longitude`|double||`longitude` from `Chicago Crime 2001 - Present`||
 |`crime_count`|int| Additive Fact|Derived|Constant literal 1|
 |`arrest_flag`|boolean|Type 1 (overwritten via MERGE)|`arrest` from `Chicago Crime 2001 - Present`|Current status; answers snapshot questions like "arrest rate this quarter" - different job from `dim_arrest_status`, which stores history|
-|`domestic_flag`|boolean **NOT DONE YET** 
+|`domestic_flag`|boolean|Type 1|`domestic` from `Chicago Crime 2001 - Present`||
+|`updated_on`|timestamp||`updated_on`|Used as the watermark for incremental load|
 
-1.ทำไมมี domestic_flag อยู่ทั้งใน dim และ fact 
-2.ref_community_area_boundaries ใช้แค่ join เพื่อเอา community_area_name แค่นั้นใช่ไหม ไม่ได้เอาไว้ทำอย่างอื่นแล้วใช่ไหม
-3.ฉันต้องสร้าง table ที่เก็บทั้ง multipolygon และ community_area_num ด้วยใช่ไหม ถ้าใช่ ฉันสามารถ extract 2 cols นี้มาจาก ref_community_area_boundaries ได้ไหม แล้วให้ไฟล์ format เป็น .geojson
+> **Why `arrest_flag` lives both in the fact table (type1) and in `dim_arrest_status` (type2) at the same time?** - this is not accidental duplication:
+> - `fact_crime.arrest_flag` answers "what is the status right now"
+> - `dim_arrest_status` answers questions that need change history, such as "average time from unattested -> arrested
+
+
 
