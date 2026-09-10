@@ -115,4 +115,7 @@ to the existing business process (it has no fact table of its own, and no recurr
 > - `dim_arrest_status` answers questions that need change history, such as "average time from unattested -> arrested
 
 
+**PICTURE OF STAR SCHEMA HERE!**
+
+
 
