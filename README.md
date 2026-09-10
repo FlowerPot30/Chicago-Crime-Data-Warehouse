@@ -34,3 +34,5 @@ This project starts from real business questions about crime in Chicago, not fro
 10. create **Storage Credential** - `cred-chicago-crime-dw` in Unity Catalog, referencing the Access Connector's resource ID; granted **CREATE EXTERNAL LOCATION** privilege to the working account
 11. create **External Location** - `ext-loc-bronze`, `ext-loc-silver`, `ext-loc-gold`, each mapped to its respective container via `abfss://<container>@chicagocrimeadlsgen2.dfs.core.windows.net/`
 12. create **Catalog & Schema** - create catalog `chicago_crime`; created schemas `bronze`, `silver` and `gold`, each with an explicit storage location pointing to its matching External Location
+
+### 2. Bronze Layer : ทำตาม 'script/bronze' **NOT DONT YET**
