@@ -69,3 +69,8 @@
 | 3 | `area_numbe` (or `area_num_1`) | Number (or Text) | Community area number code | This is the join key against `community_area` in the crime table — but it's a Number on the crime side and Text here → needs a type cast before joining |
 | 4 | `shape_area` | Number | Area (in sq ft, Illinois State Plane) | Different CRS from `the_geom` (`the_geom` is WGS84 lat/long, but `shape_area`/`shape_len` are computed from the projected coordinate system) — watch the units if you ever compute area yourself |
 | 5 | `shape_len` | Number | Perimeter length | Same caveat as above |
+
+
+> **`Boundaries - Community Areas` is used for**
+>1. create `ref_community_area_boundaries` which is the table for joining with `dim_location` for getting `community_area_name` column
+>2. create `community_areas.topojson` which is the table for Power BI Shape Map
