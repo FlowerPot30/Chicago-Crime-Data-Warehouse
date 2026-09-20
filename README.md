@@ -27,7 +27,7 @@ This project starts from real business questions about crime in Chicago, not fro
 3. create **Containers** inside `chicagocrimedadlsgen2` - `bronze`, `silver`, `gold`
 4. create **Key Vault** - `kv-chicago-crime` with RBAC permission model; granted self **Key Vault Secrets Officer** role; stored the Socrata App Token as secret `socrata-app-token`
 5. store **Socrata App Token** - registered at [`data.cityofchicago.org`](https://data.cityofchicago.org), generated a free App Token (dataset: ijzp-q8t2), stored it in Key Vault
-6. create **Databricks Workspace** - `dbw-chicago-crime-dw`, Premium tier, Hybrid/Classic workspace type
+6. create **Databricks Workspace** - `dbw-chicago-crime-dw`, Premium tier, Hybrid/Classic workspace type, SCC = No
 7. create **Entra ID Admin User** - `dbadmin` as a cloud-native organizational account with Global Administrator role, required because the Azure sign-up identity (a personal/Gmail-derived account) cannot authenticate to the Databricks Account Console
 8. verify **Unity Catalog Metastore** - whether a metastore already existed in the target region (Databricks auto-provisions one per region on workspace creation); assigned it to `dbw-chicago-crime-dw`
 9. create **Access Connector** - `ac-chicago-crime-dw` and granted it **Storage Blob Data Contributor** on `chicagocrimeadlsgen2`
