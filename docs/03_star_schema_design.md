@@ -101,7 +101,7 @@ to the existing business process (it has no fact table of its own, and no recurr
 |---|---|---|---|---|
 |`id`|string||`id` from `Chicago Crime 2001 - Present`|Primary Key|
 |`case_number`|string|Degenerate Dimension|`case_number` from `Chicago Crime 2001 - Present`||
-|`date_key`|string (FK)||Derived||
+|`date_key`|int (FK)||Derived||
 |`location_key`|int (FK)||Derived||
 |`crime_type_key`|int (FK)||Derived||
 |`arrest_key`|bigint (FK)||Derived||
