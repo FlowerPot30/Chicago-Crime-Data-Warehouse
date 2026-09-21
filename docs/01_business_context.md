@@ -17,7 +17,7 @@ Law enforcement and city planning teams lack a consistency updated, analysis-rea
 
 **Arrest Tracking**
 - How does the arrest rate change over time (quarter over quarter, year over year)?
-- What percentage of initially unattested cases result in an arrest later, and how long does that typically take?
+- What percentage of initially unarrested cases result in an arrest later, and how long does that typically take?
 - Which crime types have the highest rate of delayed arrests?
 
 ## 🔑 Key Metrics (Maybe change later...)
