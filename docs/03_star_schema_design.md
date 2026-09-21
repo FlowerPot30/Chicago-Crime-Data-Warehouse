@@ -73,11 +73,11 @@ to the existing business process (it has no fact table of its own, and no recurr
 |---|---|---|---|
 |`arrest_key`|bigint|derived|Surrogate key|
 |`case_number`|string|`case_number` from `Chicago Crime 2001 - Present`|Kept here (not just on the fact table) so the full status-change history for a case can be queried directly by `case_number`|
-|`arrest_flag`|boolean|`arrest` from `Chicago Crime 2001 - Present`||
-|`domestic_flag`|boolean|`domestic` from `Chicago Crime 2001 - Present`||
+|`arrest_flag`|string|`arrest` from `Chicago Crime 2001 - Present`||
+|`domestic_flag`|string|`domestic` from `Chicago Crime 2001 - Present`||
 |`effective_date`|timestamp|derived from `updated_on`|Set to the `updated_on` value at the load cycle when this version of the row was created|
 |`end_date`|timestamp|derived|Set to the next version's `effective_date` when a newer version is inserted; `null` while the row is still current|
-|`is_current`|boolean|derived|Maintained by the SCD 2 MERGE logic; exactly one row per `case_number` has `is_current = true` at any time|
+|`is_current`|string|derived|Maintained by the SCD 2 MERGE logic; exactly one row per `case_number` has `is_current = true` at any time|
 
 >**Why SCD Type 2**: arrest status can change retroactively, so history must be preserved to calculate "average time-to-arrest", which is a direct business question.
 
