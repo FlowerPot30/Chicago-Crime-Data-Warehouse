@@ -33,7 +33,7 @@ to the existing business process (it has no fact table of its own, and no recurr
 |Column|Type|Source|Notes|
 |---|---|---|---|
 |`date_key`|int|derived from `full_date`|Surrogate key, format `DDMMYYYY`, generated from `full_date`|
-|`full_date`|date|`date` from `Chicago Crime 2001 - Present`|Cast from the source floating timestamp|
+|`full_date`|date|`date` from `Chicago Crime 2001 - Present`|`SELECT explode(sequence(DATE'2001-01-01', DATE'2040-12-31', INTERVAL 1 DAY)) AS full_date`|
 |`year`|int|derived from `full_date`|`YEAR(full_date)`|
 |`month`|int|derived from `full_date`||
 |`quarter`|int|derived from `month`|`CEIL(month/3)`|
