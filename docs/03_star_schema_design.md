@@ -34,8 +34,10 @@ to the existing business process (it has no fact table of its own, and no recurr
 |---|---|---|---|
 |`date_key`|int|derived from `full_date`|Surrogate key, format `DDMMYYYY`, generated from `full_date`|
 |`full_date`|date|`date` from `Chicago Crime 2001 - Present`|`SELECT explode(sequence(DATE'2001-01-01', DATE'2040-12-31', INTERVAL 1 DAY)) AS full_date`|
-|`year`|int|derived from `full_date`|`YEAR(full_date)`|
 |`month`|int|derived from `full_date`||
+|`month_name`|string|mapped from `month`||
+|`year`|int|derived from `full_date`|`YEAR(full_date)`|
+|`month_year`|string|derived from `month` + `year`||
 |`quarter`|int|derived from `month`|`CEIL(month/3)`|
 |`day`|int|derived from `full_date`||
 |`weekday`|string|derived from `full_date`|eg. "Monday"..."Sunday"|
@@ -47,9 +49,9 @@ to the existing business process (it has no fact table of its own, and no recurr
 |---|---|---|---|
 |`location_key`|int|derived|Surrogate key|
 |`district`|string|`district` from `Chicago Crime 2001 - Present`|Kept as text to preserve values like "008"|
-|`ward`|int|`ward` from `Chicago Crime 2001 - Present`||
+|`ward`|string|`ward` from `Chicago Crime 2001 - Present`||
 |`beat`|string|`beat` from `Chicago Crime 2001 - Present`||
-|`community_area_code`|int|`community_area` from `Chicago Crime 2001 - Present`| cast to int|
+|`community_area_code`|string|`community_area` from `Chicago Crime 2001 - Present`||
 |`community_area_name`|string|`community` from `Boundaries - Community Areas`|Not present anywhere in the crime data itself — added via a lookup join on `community_area_code`|
 |`location_description`|string|`location_description` from `Chicago Crime 2001 - Present`|eg. "STREET", "RESIDENCE", "APARTMENT"|
 
@@ -106,8 +108,8 @@ to the existing business process (it has no fact table of its own, and no recurr
 |`latitude`|double||`latitude` from `Chicago Crime 2001 - Present`||
 |`longitude`|double||`longitude` from `Chicago Crime 2001 - Present`||
 |`crime_count`|int| Additive Fact|Derived|Constant literal 1|
-|`arrest_flag`|boolean|Type 1 (overwritten via MERGE)|`arrest` from `Chicago Crime 2001 - Present`|Current status; answers snapshot questions like "arrest rate this quarter" - different job from `dim_arrest_status`, which stores history|
-|`domestic_flag`|boolean|Type 1|`domestic` from `Chicago Crime 2001 - Present`||
+|`arrest_flag`|boolean|Flag: current status (overwritten by MERGE)|`arrest` from `Chicago Crime 2001 - Present`|Current status; answers snapshot questions like "arrest rate this quarter" - different job from `dim_arrest_status`, which stores history|
+|`domestic_flag`|boolean|Flag: current status (overwritten by MERGE)|`domestic` from `Chicago Crime 2001 - Present`||
 |`updated_on`|timestamp||`updated_on`|Used as the watermark for incremental load|
 
 > **Why `arrest_flag` lives both in the fact table (type1) and in `dim_arrest_status` (type2) at the same time?** - this is not accidental duplication:
