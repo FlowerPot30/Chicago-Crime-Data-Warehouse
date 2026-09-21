@@ -7,7 +7,7 @@ Declare the Grain -> Identify the Dimensions -> Identify the Facts), so every de
 
 **Business process chosen**: Incident Reporting & Investigation Tracking 
 
-> Per [`docs/business_context.md`](docs/business_context.md), this business process is the source of every business question in the project 
+> Per [`docs/01_business_context.md`](docs/01_business_context.md), this business process is the source of every business question in the project 
 (spatial/temporal crime patterns, arrest rate, resolution tag)
 
 **Important**: Boundaries - Community Areas is not a new business process - it's just a reference/geographic dimension that adds a spatial dimension 
