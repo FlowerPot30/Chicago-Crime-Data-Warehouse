@@ -8,7 +8,7 @@ Declare the Grain -> Identify the Dimensions -> Identify the Facts), so every de
 **Business process chosen**: Incident Reporting & Investigation Tracking 
 
 > Per [`docs/01_business_context.md`](docs/01_business_context.md), this business process is the source of every business question in the project 
-(spatial/temporal crime patterns, arrest rate, resolution tag)
+(spatial/temporal crime patterns, arrest rate, resolution lag)
 
 **Important**: Boundaries - Community Areas is not a new business process - it's just a reference/geographic dimension that adds a spatial dimension 
 to the existing business process (it has no fact table of its own, and no recurring "event" that needs to be recorded)
@@ -63,7 +63,7 @@ to the existing business process (it has no fact table of its own, and no recurr
 |---|---|---|---|
 |`crime_type_key`|int|derived|Surrogate key|
 |`iucr`|string|`iucr` from `Chicago Crime 2001 - Present`|
-|`primary_type`|string`|`primary_type` from `Chicago Crime 2001 - Present`|
+|`primary_type`|string|`primary_type` from `Chicago Crime 2001 - Present`|
 |`description`|string|`description` from `Chicago Crime 2001 - Present`|
 |`fbi_code`|string|`fbi_code` from `Chicago Crime 2001 - Present`|
 
@@ -86,10 +86,10 @@ to the existing business process (it has no fact table of its own, and no recurr
 |Column|Type|Source|Notes|
 |---|---|---|---|
 |`community_area_code`|int|`area_numbe`|Canonical join key; the duplicate area_num_1 field is dropped in Silver|
-|`community_area_name|string|`community`||
+|`community_area_name`|string|`community`||
 |`boundary_geometry`|string|`the_geom`|Kept as a raw string, not parsed into a native geometry type|
 |`shape_area_sqft`|double|`shape_area`||
-|`shape_perimeter_ft|double|`shape_len`||
+|`shape_perimeter_ft`|double|`shape_len`||
 
 >**Why this stays a reference table and not a full dimension**: Kimball's default guidance is to keep dimensions denormalized rather than snow flaking them - `community_area_code`/`community_area_name` are low-cardinality (77 values) and belong flat in `dim_location`, same as `district`/`ward`/`beat`. The one field that justifies a split is `boundary_geometry` — a large polygon (hundreds to thousands of coordinate points). If it were embedded in `dim_location`, it would be duplicated across every row sharing the same community area, and `dim_location` can realistically have far more rows than the 77 distinct boundary shapes that exist. This table exists purely to avoid that waste; it plays no role in the normal analytical join path (crime counts, arrest rates, time trends never touch it) — its only consumer is the BI/map-rendering layer.
 
