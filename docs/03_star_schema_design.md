@@ -101,15 +101,15 @@ to the existing business process (it has no fact table of its own, and no recurr
 |---|---|---|---|---|
 |`id`|string||`id` from `Chicago Crime 2001 - Present`|Primary Key|
 |`case_number`|string|Degenerate Dimension|`case_number` from `Chicago Crime 2001 - Present`||
-|`date_key`|int (FK)||Derived||
+|`date_key`|string (FK)||Derived||
 |`location_key`|int (FK)||Derived||
 |`crime_type_key`|int (FK)||Derived||
 |`arrest_key`|bigint (FK)||Derived||
 |`latitude`|double||`latitude` from `Chicago Crime 2001 - Present`||
 |`longitude`|double||`longitude` from `Chicago Crime 2001 - Present`||
 |`crime_count`|int| Additive Fact|Derived|Constant literal 1|
-|`arrest_flag`|boolean|Flag: current status (overwritten by MERGE)|`arrest` from `Chicago Crime 2001 - Present`|Current status; answers snapshot questions like "arrest rate this quarter" - different job from `dim_arrest_status`, which stores history|
-|`domestic_flag`|boolean|Flag: current status (overwritten by MERGE)|`domestic` from `Chicago Crime 2001 - Present`||
+|`arrest_flag`|string|Flag: current status (overwritten by MERGE)|`arrest` from `Chicago Crime 2001 - Present`|Current status; answers snapshot questions like "arrest rate this quarter" - different job from `dim_arrest_status`, which stores history|
+|`domestic_flag`|string|Flag: current status (overwritten by MERGE)|`domestic` from `Chicago Crime 2001 - Present`||
 |`updated_on`|timestamp||`updated_on`|Used as the watermark for incremental load|
 
 > **Why `arrest_flag` lives both in the fact table (type1) and in `dim_arrest_status` (type2) at the same time?** - this is not accidental duplication:
