@@ -32,7 +32,7 @@ to the existing business process (it has no fact table of its own, and no recurr
 
 |Column|Type|Source|Notes|
 |---|---|---|---|
-|`date_key`|int|derived from `full_date`|Surrogate key, format `DDMMYYYY`, generated from `full_date`|
+|`date_key`|string|derived from `full_date`|Surrogate key, format `DDMMYYYY`, generated from `full_date` (**USE AS A FK FOR JOIN ONLY!!**)|
 |`full_date`|date|`date` from `Chicago Crime 2001 - Present`|`SELECT explode(sequence(DATE'2001-01-01', DATE'2040-12-31', INTERVAL 1 DAY)) AS full_date`|
 |`month`|int|derived from `full_date`||
 |`month_name`|string|mapped from `month`||
@@ -104,7 +104,10 @@ to the existing business process (it has no fact table of its own, and no recurr
 |`date_key`|int (FK)||Derived||
 |`location_key`|int (FK)||Derived||
 |`crime_type_key`|int (FK)||Derived||
-|`arrest_key`|bigint (FK)||Derived||
+|`arrest_key`|bigint (FK)||Derived|`fact_crime.arrest_key` always points to the row in `dim_arrest_status` where `is_current=true` for that case
+1. Close the existing current row in `dim_arrest_status` - set `end_date` to the new `effective_date` and `is_current=false`
+2. Insert the new current row in `dim_arrest_status` with `is_current=true`
+3. Update `fact_crime.arrest_key` for that `case_number` to the newly inserted row's key|
 |`latitude`|double||`latitude` from `Chicago Crime 2001 - Present`||
 |`longitude`|double||`longitude` from `Chicago Crime 2001 - Present`||
 |`crime_count`|int| Additive Fact|Derived|Constant literal 1|
