@@ -15,7 +15,7 @@ to the existing business process (it has no fact table of its own, and no recurr
 
 ## Step 2 - Declare the Grain
 
-**Grain statement**: One row in `fact_crime` represents one crime case recorded by CPD (Chicago Police Department), identified by the natural key `case_number`
+**Grain statement**: One row in `fact_crime` represents one reported offense record as recorded by CPD, identified by the natural key `id`. A single investigative case (`case_number`) may bundle multiple offense records
 
 **Fact Table Type**: A transaction fact table maintained via MERGE/UPSERT because existing cases can be updated retroactively (`updated_on`)
 
