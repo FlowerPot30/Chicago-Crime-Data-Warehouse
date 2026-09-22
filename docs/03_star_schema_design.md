@@ -104,10 +104,7 @@ to the existing business process (it has no fact table of its own, and no recurr
 |`date_key`|int (FK)||Derived||
 |`location_key`|int (FK)||Derived||
 |`crime_type_key`|int (FK)||Derived||
-|`arrest_key`|bigint (FK)||Derived|`fact_crime.arrest_key` always points to the row in `dim_arrest_status` where `is_current=true` for that case
-1. Close the existing current row in `dim_arrest_status` - set `end_date` to the new `effective_date` and `is_current=false`
-2. Insert the new current row in `dim_arrest_status` with `is_current=true`
-3. Update `fact_crime.arrest_key` for that `case_number` to the newly inserted row's key|
+|`arrest_key`|bigint (FK)||Derived|`fact_crime.arrest_key` always points to the row in `dim_arrest_status` where `is_current=true` for that case. **1st**: Close the existing current row in `dim_arrest_status` - set `end_date` to the new `effective_date` and `is_current=false` **2nd**: Insert the new current row in `dim_arrest_status` with `is_current=true` **3rd**: Update `fact_crime.arrest_key` for that `case_number` to the newly inserted row's key|
 |`latitude`|double||`latitude` from `Chicago Crime 2001 - Present`||
 |`longitude`|double||`longitude` from `Chicago Crime 2001 - Present`||
 |`crime_count`|int| Additive Fact|Derived|Constant literal 1|
