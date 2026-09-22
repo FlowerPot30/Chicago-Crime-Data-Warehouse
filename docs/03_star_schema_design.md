@@ -78,6 +78,7 @@ to the existing business process (it has no fact table of its own, and no recurr
 |`effective_date`|timestamp|derived from `updated_on`|Set to the `updated_on` value at the load cycle when this version of the row was created|
 |`end_date`|timestamp|derived|Set to the next version's `effective_date` when a newer version is inserted; `null` while the row is still current|
 |`is_current`|string|derived|Maintained by the SCD 2 MERGE logic; exactly one row per `case_number` has `is_current = true` at any time|
+|`version_source`|string|derived|records from initial load will set to `BACKFILL` and `DETECTED_CHANGE` for actual detected change|
 
 >**Why SCD Type 2**: arrest status can change retroactively, so history must be preserved to calculate "average time-to-arrest", which is a direct business question.
 
