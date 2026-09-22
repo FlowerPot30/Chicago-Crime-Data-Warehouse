@@ -14,6 +14,8 @@ Law enforcement and city planning teams lack a consistency updated, analysis-rea
 - What time patterns (weekday vs. weekend, monthly trends) show the highest crime volume, and in which areas?
 - Which beats/wards show a consistent increase in crime over the last N month?
 - Are domestic-related incidents concentrated in specific area?
+- Which hours of the day see the highest crime volume, and does this pattern differ by crime type (eg. burglary concentrated overnight vs. theft during the day)?
+- Do certain districts show a distinct hour-of-day crime pattern that differs from the citywide average, useful for planning patrol shift timing?
 
 **Arrest Tracking**
 - How does the arrest rate change over time (quarter over quarter, year over year)?
