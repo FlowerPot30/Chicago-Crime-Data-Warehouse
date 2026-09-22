@@ -20,6 +20,8 @@ Law enforcement and city planning teams lack a consistency updated, analysis-rea
 - What percentage of initially unarrested cases result in an arrest later, and how long does that typically take?
 - Which crime types have the highest rate of delayed arrests?
 
+> Time-to-arrest are only reliable for status changes detected after pipeline go-live; earlier changes are not observable from the source API.
+
 ## 🔑 Key Metrics (Maybe change later...)
 
 - Arrest Rate (by quarter, by crime type)
