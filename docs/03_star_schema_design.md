@@ -53,11 +53,19 @@ to the existing business process (it has no fact table of its own, and no recurr
 |`beat`|string|`beat` from `Chicago Crime 2001 - Present`||
 |`community_area_code`|string|`community_area` from `Chicago Crime 2001 - Present`||
 |`community_area_name`|string|`community` from `Boundaries - Community Areas`|Not present anywhere in the crime data itself — added via a lookup join on `community_area_code`|
-|`location_description`|string|`location_description` from `Chicago Crime 2001 - Present`|eg. "STREET", "RESIDENCE", "APARTMENT"|
 
 > I didn't put `latitude` and `longitude` in `dim_location` because raw coordinates are close to unique per incident, so putting them in a dimension would make dim_location balloon to nearly one row per fact row, defeating the point of having a dimension at all. Hence I put them into `fact_crime` instead
 
-### 3.3 `dim_crime_type`
+### 3.3 `dim_location_type`
+|Column|Type|Source|Notes|
+|---|---|---|---|
+|`location_type_key`|int|derived|Surrogate Key|
+|`location_description`|string|`location_description` from `Chicago Crime 2001 - Present`|
+
+> **Why this is a separate dimension from `dim_location` ?** : `location_description` is independent of geography - a "STREET" incident can occur in any beat, district, ward, or community area, and vice versa. If kept inside `dim_location`, would balloon `dim_location`'s row count well beyond what a geography-only dimension should have. Splitting it out keep `dim_location` at a clean geographic grain and lets `dim_location_type` stay small and easy to extend.
+
+
+### 3.4 `dim_crime_type`
 
 |Column|Type|Source|Notes|
 |---|---|---|---|
@@ -67,11 +75,11 @@ to the existing business process (it has no fact table of its own, and no recurr
 |`description`|string|`description` from `Chicago Crime 2001 - Present`|
 |`fbi_code`|string|`fbi_code` from `Chicago Crime 2001 - Present`|
 
-### 3.4 `dim_arrest_status`
+### 3.5 `dim_arrest_status`
 
 |Column|Type|Source|Notes|
 |---|---|---|---|
-|`arrest_key`|bigint|derived|Surrogate key|
+|`arrest_status_key`|bigint|derived|Surrogate key|
 |`case_number`|string|`case_number` from `Chicago Crime 2001 - Present`|Kept here (not just on the fact table) so the full status-change history for a case can be queried directly by `case_number`|
 |`arrest_flag`|string|`arrest` from `Chicago Crime 2001 - Present`||
 |`domestic_flag`|string|`domestic` from `Chicago Crime 2001 - Present`||
@@ -82,7 +90,7 @@ to the existing business process (it has no fact table of its own, and no recurr
 
 >**Why SCD Type 2**: arrest status can change retroactively, so history must be preserved to calculate "average time-to-arrest", which is a direct business question.
 
-### 3.5 `ref_community_area_boundaries` (from `Boundaries - Community Areas` only)
+### 3.6 `ref_community_area_boundaries` (from `Boundaries - Community Areas` only)
 
 |Column|Type|Source|Notes|
 |---|---|---|---|
@@ -104,8 +112,9 @@ to the existing business process (it has no fact table of its own, and no recurr
 |`case_number`|string|Degenerate Dimension|`case_number` from `Chicago Crime 2001 - Present`||
 |`date_key`|int (FK)||Derived||
 |`location_key`|int (FK)||Derived||
+|`location_type_key`|int (FK)|Derived||
 |`crime_type_key`|int (FK)||Derived||
-|`arrest_key`|bigint (FK)||Derived|`fact_crime.arrest_key` always points to the row in `dim_arrest_status` where `is_current=true` for that case. **1st**: Close the existing current row in `dim_arrest_status` - set `end_date` to the new `effective_date` and `is_current=false` **2nd**: Insert the new current row in `dim_arrest_status` with `is_current=true` **3rd**: Update `fact_crime.arrest_key` for that `case_number` to the newly inserted row's key|
+|``|bigint (FK)||Derived|`fact_crime.arres_type_key` always points to the row in `dim_arrest_status` where `is_current=true` for that case. **1st**: Close the existing current row in `dim_arrest_status` - set `end_date` to the new `effective_date` and `is_current=false` **2nd**: Insert the new current row in `dim_arrest_status` with `is_current=true` **3rd**: Update `fact_crime.` for that `case_number` to the newly inserted row's key|
 |`latitude`|double||`latitude` from `Chicago Crime 2001 - Present`||
 |`longitude`|double||`longitude` from `Chicago Crime 2001 - Present`||
 |`crime_count`|int| Additive Fact|Derived|Constant literal 1|
