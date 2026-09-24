@@ -9,7 +9,7 @@
 |Dataset name|Crimes - 2001 to Present|
 |Dataset ID|ijzp-q8t2|
 |Source|[`Crimes - 2001 to Present, Chicago Data Portal (Socrata Open Data / SODA API)`](https://dev.socrata.com/foundry/data.cityofchicago.org/ijzp-q8t2)|
-|Endpoint|**NOT SURE**|
+|Endpoint|`https://data.cityofchicago.org/resource/ijzp-q8t2.json`|
 |Update frequency|Daily (excludes the most recent 7 days, which are still under investigation)|
 |Authentication|Not required, but App Token is recommended to avoid rate limiting|
 |Request limit|50,000 rows/request (pagination via $limit / $offset is required) **wtf is this**|
@@ -54,7 +54,7 @@
 |Dataset name|Boundaries - Community Areas|
 |Dataset ID|igwz-8jzy|
 |Source|[`Boundaries - Community Areas, Chicago Data Portal (Socrata Open Data / SODA API)`](https://dev.socrata.com/foundry/data.cityofchicago.org/igwz-8jzy)|
-|Endpoint|**NOT SURE**|
+|Endpoint|`https://data.cityofchicago.org/resource/igwz-8jzy.json`|
 |Update frequency|Essentially static — community area boundaries are statistical dividing lines defined back in the 1920s; not updated daily|
 |Approx. row count|~77 rows (1 row = 1 community area)|
 |Column Count	approx.|6 columns|
