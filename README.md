@@ -25,7 +25,7 @@ This project starts from real business questions about crime in Chicago, not fro
 1. create **Resource Group** - `rg-chicago-crime-dw` as the container for all project resources.
 2. create **Storage Account with ADLS Gen2** - `chicagocrimeadlsgen2` with Hierarchical namespace enabled, Shared key access disabled, Hot access tier, TLS 1.2 minimum
 3. create **Containers** inside `chicagocrimedadlsgen2` - `bronze`, `silver`, `gold` and `catalog root`
-4. create **Key Vault** - `kv-chicago-crime` with Vault access policy; stored the Socrata App Token as secret `socrata-app-token`
+4. create **Key Vault** - `kv-chicago-crime` with Vault access policy; create an access policy by provide permission get, list, set to secret permissions; stored the Socrata App Token as secret `socrata-app-token`
 5. store **Socrata App Token** - registered at [`data.cityofchicago.org`](https://data.cityofchicago.org), generated a free App Token (dataset: ijzp-q8t2), stored it in Key Vault
 6. create **Databricks Workspace** - `dbw-chicago-crime-dw`, Premium tier, Hybrid/Classic workspace type, SCC = No
 7. create **Entra ID Admin User** - `dbadmin` as a cloud-native organizational account with Global Administrator role, required because the Azure sign-up identity (a personal/Gmail-derived account) cannot authenticate to the Databricks Account Console
