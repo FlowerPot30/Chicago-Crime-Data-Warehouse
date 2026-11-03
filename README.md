@@ -17,7 +17,16 @@ This project starts from real business questions about crime in Chicago, not fro
 
 ## 🕹️ Technology Used
 
-|
+| Tool | Role in this project |
+| --- | --- |
+| Azure Data Factory | Orchestration - trigger pipeline on a schedule and passes parameters into Databricks Notebook |
+| Azure Key Vault | Securely stores the Socrata App Token; Databricks retrieves it via a Secret Scope |
+| Azure Data Lake Storage Gen2 | Stores data for every layer (Bronze/Silver/Gold) following the Medallion Architecture |
+| Databricks (Notebook + Workflows) | Processes data with PySpark and orchestrates the Bronze -> Silver -> Gold sequence |
+| Unity Catalog | Governance - manages catalog/schema/table permissions |
+| Entra ID / Managed Identity | Authentication between ADF <-> Databricks <-> ADLS without using connection strings or keys |
+| GitHub Actions | Deploys notebook code to Databricks (lightweight CI/CD) |
+| Power BI | Dashboard that answers business questions using data from the Gold layer |
 
 ## ▶️ How to implement the project
 
