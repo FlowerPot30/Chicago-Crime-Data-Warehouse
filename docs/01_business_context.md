@@ -30,4 +30,6 @@ Law enforcement and city planning teams lack a consistency updated, analysis-rea
 - Crime Count (by district, by time period)
 - Case Resolution Lag (average time from incident to arrest)
 
+## ⚠️ Data Coverage
 
+This warehouse contains crime records from **January 1, 2015 onward only** — it does not cover 2001-2014, despite the source dataset being named "Crimes - 2001 to Present". This cutoff was chosen deliberately because Chicago Police Department's district boundaries changed significantly on December 18, 2012; starting from 2015 ensures the `district` column is consistent across the entire data range.
