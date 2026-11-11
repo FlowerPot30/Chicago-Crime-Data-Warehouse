@@ -2,6 +2,8 @@
 
 This document designs the Gold Layer Star Schema following Ralph Kimball's 4-step process)
 
+![Star Schema](./star_schema.png)
+
 ## Step 1 - Select the Business Process
 
 **Business process chosen**: Incident Reporting & Investigation Tracking
