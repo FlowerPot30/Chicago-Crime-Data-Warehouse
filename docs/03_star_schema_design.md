@@ -82,10 +82,15 @@ This document designs the Gold Layer Star Schema following Ralph Kimball's 4-ste
 |---|---|---|---|
 |`block_key`|int|derived|Surrogate key|
 |`block`|string|`block` from `Chicago Crime 2001 - Present`|Raw anonymized block-level address, e.g. "025XX W ADDISON ST"|
-|`block_hundred`|string|parsed from `block`||
-|`direction`|string|parsed from `block`|e.g. "West", "North"|
-|`street_name`|string|parsed from `block`||
-|`street_type`|string|parsed from `block`|e.g. "Avenue", "Street"|
+|`block_hundred`|string|decomposed from `block` in Silver||
+|`direction`|string|decomposed from `block` in Silver|e.g. "West", "North"|
+|`street_name`|string|decomposed from `block` in Silver||
+|`street_type`|string|decomposed from `block` in Silver|e.g. "Avenue", "Street"|
+
+> **Where the decomposition happens**: `block` is split in the **Silver** layer (not in Gold) so that every part can be validated column by
+> column as a data quality check (e.g. `direction` must be a valid compass value). The raw `block` is kept alongside the parts. If a
+> `block` does not match the expected pattern, the parts that cannot be extracted become `NULL` and the number of such rows is
+> reported — the row itself is never dropped. Gold only takes the distinct combinations to build `dim_block`.
 
 > **Why a new dimension instead of a Degenerate Dimension, or merging into `dim_location`**: `block` on its own (one high-cardinality
 > identifier, no descriptive attributes) would be a textbook Degenerate Dimension. Once decomposed into real sub-attributes
@@ -103,7 +108,21 @@ This document designs the Gold Layer Star Schema following Ralph Kimball's 4-ste
 |`iucr`|string|`iucr` from `Chicago Crime 2001 - Present`|Illinois's own 434-code classification; `primary_type`/`description` are both derived from this|
 |`primary_type`|string|`primary_type` from `Chicago Crime 2001 - Present`||
 |`description`|string|`description` from `Chicago Crime 2001 - Present`||
-|`fbi_code`|string|`fbi_code` from `Chicago Crime 2001 - Present`|FBI/NIBRS-aligned classification, coarser than `iucr` (likely many-`iucr`-to-one-`fbi_code`); kept as a bare code with no description column — no official city/CPD reference table mapping `fbi_code` to a description could be found, so adding one would mean relying on an unverifiable external source|
+|`fbi_code`|string|`fbi_code` from `Chicago Crime 2001 - Present`|FBI/NIBRS-aligned classification, coarser than `iucr` (likely many-`iucr`-to-one-`fbi_code`); the descriptions and index/violent-property groupings come from CPD's official "Crime Categories" table (see the three columns below and the note under this table)|
+|`fbi_code_description`|string|CPD "Crime Categories" table (static reference)|e.g. `01A` → "HOMICIDE – 1ST OR 2ND DEGREE (INDEX)"; kept exactly as published by CPD|
+|`fbi_index_type`|string|CPD "Crime Categories" table (static reference)|`INDEX` / `NON-INDEX`; the table also uses `MCC`, `TRF`, `WRT` and `NON-CRIMINAL` as their own values for the non-FBI codes|
+|`fbi_crime_category`|string|CPD "Crime Categories" table (static reference)|`VIOLENT INDEX` / `PROPERTY INDEX` / `NON-INDEX` (or `MCC` / `TRF` / `WRT` / `NON-CRIMINAL`); lets BI users split violent vs property crime without memorising codes|
+
+> **Source of the FBI code descriptions**: CPD's "Publicly Accessible Data" page (https://www.chicagopolice.org/?p=40515), section
+> "Crime Categories" (checked 2026-11-14), lists each code with Description, Index and Violent/Property columns. This replaces the
+> earlier note that no official reference could be found. The table also contains four codes that are **not** FBI/NIBRS codes —
+> `00` (non-criminal), `MCC`, `TRF`, `WRT` — so a format check on `fbi_code` must allow them (a pattern like "2 digits + optional A/B"
+> alone would wrongly reject them). The mapping is kept as a static reference shared by Silver (validation: a code that is not in the
+> list = WARN) and Gold (these three descriptive columns), so both layers use the same list.
+>
+> **IUCR validation**: Silver validates `iucr` against a static copy of CPD's IUCR reference (Chicago Data Portal dataset `c7ck-438e`,
+> which also keeps retired codes for historical reference). An unknown code = WARN, not FAIL, because CPD can add new codes after the
+> static copy was taken.
 
 ### 3.6 `dim_arrest_status`
 
@@ -138,32 +157,37 @@ This document designs the Gold Layer Star Schema following Ralph Kimball's 4-ste
 
 |Column|Type|Fact type|Source|Notes|
 |---|---|---|---|---|
-|`id`|int|-|`id` from `Chicago Crime 2001 - Present`|Primary Key; kept as-is from source — no separate surrogate key needed for the fact table|
+|`id`|bigint|-|`id` from `Chicago Crime 2001 - Present`|Primary Key; kept as-is from source — no separate surrogate key needed for the fact table. Typed `bigint` to match the Silver layer, where `id` is cast from string and is the key of the Silver MERGE|
 |`case_number`|string|Degenerate Dimension|`case_number` from `Chicago Crime 2001 - Present`|Also appears in `dim_arrest_status`, but for a different purpose — this one is a stable, grouping/tracing identifier at the fact's own grain, independent of the mutable `arrest_status_key` FK (which gets rewritten every time the arrest status changes)|
-|`incident_date_key`|int (FK)|-|Derived|Named by business role, not just "date_key" (Role-Playing Dimension naming) → `dim_date.date_key`|
-|`incident_time_key`|tinyint (FK)|-|Derived|→ `dim_time.time_key`|
+|`incident_date_key`|int (FK)|-|Derived from `incident_date` (Silver column decomposed from `date`)|Named by business role, not just "date_key" (Role-Playing Dimension naming) → `dim_date.date_key`|
+|`incident_time_key`|tinyint (FK)|-|Derived from `incident_hour` (Silver column decomposed from `date`)|→ `dim_time.time_key`|
 |`location_key`|int (FK)|-|Derived|→ `dim_location.location_key`|
 |`block_key`|int (FK)|-|Derived|→ `dim_block.block_key`|
 |`crime_type_key`|int (FK)|-|Derived|→ `dim_crime_type.crime_type_key`|
 |`arrest_status_key`|int (FK)|-|Derived|→ `dim_arrest_status.arrest_status_key`; always points to the row where `is_current=true` for that case. **1st**: close the existing current row — set `end_date` to the new `effective_date` and `is_current=false`. **2nd**: insert the new current row with `is_current=true`. **3rd**: update `fact_crime.arrest_status_key` for that `case_number` to the newly inserted row's key|
 |`location_description_key`|int (FK)|-|Derived|→ `dim_location_description.dim_location_description_key`|
-|`x_coordinate`|double|Non-additive Fact|`x_coordinate` from `Chicago Crime 2001 - Present`|State Plane coordinate; `0` is a known geocoding-failure sentinel value|
+|`x_coordinate`|double|Non-additive Fact|`x_coordinate` from `Chicago Crime 2001 - Present`|State Plane coordinate; `0` is a known geocoding-failure sentinel value in the source — **Silver converts it to `NULL`** (unknown) so it cannot distort ranges, averages or maps; the count and examples of converted rows are reported before the conversion|
 |`y_coordinate`|double|Non-additive Fact|`y_coordinate` from `Chicago Crime 2001 - Present`|Same as above|
-|`latitude`|double|Non-additive Fact|`latitude` from `Chicago Crime 2001 - Present`|Too continuous/non-aggregatable to be a Degenerate Dimension or a dimension attribute — can never be meaningfully summed|
+|`latitude`|double|Non-additive Fact|`latitude` from `Chicago Crime 2001 - Present`|Too continuous/non-aggregatable to be a Degenerate Dimension or a dimension attribute — can never be meaningfully summed. Silver sets values outside Chicago's bounding box to `NULL` (bounds set from data profiling) and reports them first|
 |`longitude`|double|Non-additive Fact|`longitude` from `Chicago Crime 2001 - Present`|Same as above|
 |`crime_count`|tinyint|Additive Fact|Derived|Constant literal 1|
-|`updated_on`|timestamp|-|`updated_on` from source|Used as the watermark for incremental load; not linked to `dim_date` — it's ETL/technical plumbing, not a business date|
+|`updated_on`|timestamp|-|`updated_on` from source|The watermark of the **Bronze** incremental load. The **Silver** incremental watermark is `_ingested_at` (the time a row landed in Bronze), not `updated_on`, so rows re-ingested by a `manual_backfill` (which can carry an old `updated_on`) are still picked up. From Silver onwards `updated_on` decides which version of an `id` is the latest and drives `dim_arrest_status.effective_date`. Not linked to `dim_date` — it's ETL/technical plumbing, not a business date|
 
 
 ### ‼️ Special Table: `ref_community_area_boundaries` (from `Boundaries - Community Areas` only)
 
 |Column|Type|Source|Notes|
 |---|---|---|---|
-|`community_area_code`|int|`area_numbe`|Canonical join key; the duplicate `area_num_1` field is dropped in Silver|
+|`community_area_code`|int|`area_numbe`|Canonical join key; the duplicate `area_num_1` field is not ingested at all (excluded already in Bronze)|
 |`community_area_name`|string|`community`||
 |`boundary_geometry`|string|`the_geom`|Kept as a raw string, not parsed into a native geometry type|
 |`shape_area_sqft`|double|`shape_area`||
 |`shape_perimeter_ft`|double|`shape_len`||
+
+> **Silver source**: the Silver table `chicago_crime.silver.community_area_boundaries` already renames and casts these columns
+> (`area_numbe` → `community_area_code` int, `community` → `community_area_name`, `the_geom` → `boundary_geometry`, `shape_area` →
+> `shape_area_sqft` double, `shape_len` → `shape_perimeter_ft` double) and checks that `boundary_geometry` is parseable GeoJSON text;
+> Gold copies it as-is under the `ref_` name. Silver also validates `fact_crime`'s `community_area` against its `community_area_code` values.
 
 > This table exists purely to avoid that waste; it plays no role in the normal analytical join path (crime counts,
 > arrest rates, time trends never touch it) — its only consumer is the BI/map-rendering layer.
