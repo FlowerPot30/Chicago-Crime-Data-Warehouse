@@ -33,7 +33,7 @@ This project starts from real business questions about crime in Chicago, not fro
 ### 1. Setup Environment
 1. create **Resource Group** - `rg-chicago-crime-dw` as the container for all project resources.
 2. create **Storage Account with ADLS Gen2** - `chicagocrimeadlsgen2` with Hierarchical namespace enabled, Shared key access disabled, Hot access tier, TLS 1.2 minimum
-3. create **Containers** inside `chicagocrimedadlsgen2` - `bronze`, `silver`, `gold` and `catalog root`
+3. create **Containers** inside `chicagocrimeadlsgen2` - `bronze`, `silver`, `gold` and `catalog root`
 4. create **Key Vault** - `kv-chicago-crime` with Vault access policy; create an access policy by provide permission get, list, set to secret permissions; stored the Socrata App Token as secret `socrata-app-token`
 5. store **Socrata App Token** - registered at [`data.cityofchicago.org`](https://data.cityofchicago.org), generated a free App Token (dataset: ijzp-q8t2), stored it in Key Vault
 6. create **Databricks Workspace** - `dbw-chicago-crime-dw`, Premium tier, Hybrid/Classic workspace type, SCC = No
@@ -44,4 +44,4 @@ This project starts from real business questions about crime in Chicago, not fro
 11. create **External Location** - `ext-loc-bronze`, `ext-loc-silver`, `ext-loc-gold` and `ext-loc-catalogroot` each mapped to its respective container via `abfss://<container>@chicagocrimeadlsgen2.dfs.core.windows.net/`
 12. create **Catalog & Schema** - create catalog `chicago_crime` use `ext-loc-catalogroot` for **storage location**; created schemas `bronze`, `silver` and `gold`, each with an explicit storage location pointing to its matching External Location
 
-### 2. Bronze Layer : ทำตาม 'script/bronze' **NOT DONT YET**
+### 2. Bronze Layer 
