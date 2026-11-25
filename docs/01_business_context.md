@@ -32,4 +32,4 @@ Law enforcement and city planning teams lack a consistency updated, analysis-rea
 
 ## ⚠️ Data Coverage
 
-This warehouse contains crime records from **January 1, 2015 onward only** — it does not cover 2001-2014, despite the source dataset being named "Crimes - 2001 to Present". This cutoff was chosen deliberately because Chicago Police Department's district boundaries changed significantly on December 18, 2012; starting from 2015 ensures the `district` column is consistent across the entire data range.
+The Bronze notebook pulls rows by `updated_on`. The first run reads every records whose `updated_on` is after 2015-01-01; later runs read only what changed since the last run.
