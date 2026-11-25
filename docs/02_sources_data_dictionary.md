@@ -74,3 +74,33 @@
 > **`Boundaries - Community Areas` is used for**
 >1. create `ref_community_area_boundaries` which is the table for joining with `dim_location` for getting `community_area_name` column
 >2. create `community_areas.topojson` which is the table for Power BI Shape Map
+
+## 🔢 3. IUCR Codes (reference data)
+
+### 🗂️ Source Overview
+
+|Item|Detail|
+|---|---|
+|Dataset name|Chicago Police Department - Illinois Uniform Crime Reporting (IUCR) Codes|
+|Dataset ID|c7ck-438e|
+|Source|[`Chicago Police Department - Illinois Uniform Crime Reporting (IUCR) Codes, Chicago Data Portal`](https://data.cityofchicago.org/d/c7ck-438e)|
+|Endpoint|`https://data.cityofchicago.org/api/v3/views/c7ck-438e/query.json`|
+|Update frequency|Essentially static (a list of codes that rarely changes)|
+|Approx. row count|a little over 400 rows (1 row = 1 IUCR code)|
+|Load pattern|Full load (`bronze.iucr_codes`, then `silver.ref_iucr`)|
+
+### 📋 Field List
+
+|#|Field|Type|Description|Notes|
+|---|---|---|---|---|
+| 1 | `iucr` | string | The 4-character IUCR code | Key; the code in the crime data must exist here |
+| 2 | `primary_description` | string | The primary crime type of the code | Compared with `primary_type` of the crime: the pair (`iucr`, `primary_type`) must exist in this table |
+| 3 | `secondary_description` | string | The sub-category of the code | |
+| 4 | `index_code` | string | `I` for an Index offense, `N` for a Non-Index offense | |
+| 5 | `active` | boolean | Whether the code is still in use | |
+
+> **`IUCR Codes` is used for**
+> 1. checking that every `iucr` of a crime exists
+> 2. checking that `primary_type` belongs to its `iucr`. The check compares against this table, not against the other rows of the batch
+
+
