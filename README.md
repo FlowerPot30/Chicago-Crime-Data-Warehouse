@@ -45,3 +45,41 @@ This project starts from real business questions about crime in Chicago, not fro
 12. create **Catalog & Schema** - create catalog `chicago_crime` use `ext-loc-catalogroot` for **storage location**; created schemas `bronze`, `silver` and `gold`, each with an explicit storage location pointing to its matching External Location
 
 ### 2. Bronze Layer 
+
+Bronze keeps the source data exactly as it arrived: every column is stored as text and nothing is cleaned. Run the notebooks is [`scripts/bronze/`](./scripts/bronze)
+
+| Notebook | Source | Writes | Load pattern |
+| --- | --- | --- | --- |
+| `ingest_boundaries` | Boundaries - Community Areas (`igwz-8jzy`) | `bronze.community_area_boundaries` | full load, overwrite |
+| `ingest_iucr` | CPD IUCR Codes (`c7ck-438e`) | `bronze.iucr_codes` | full load, overwrite |
+| `ingest_crimes` | Crimes - 2001 to Present (`ijzp-q8t2`) | `bronze.crimes` (append-only) and `bronze.load_control` | incremental: rows with `updated_on` after the saved watermark, read in 30-day chunks |
+
+`ingest_crimes` starts from `updated_on > 2015-01-01` on the first run. It filters on `updated_on`, not on the incident date, so incidents from before 2015 are included when their record was updated after that date (see [`01_Business Context`](./docs/01_business_context.md)).
+
+### 3. Silver Layer 
+
+Silver turns the text of Bronze into typed, checked data. A row that breaks a rule is **never fixed by guessing**: the whole row goes to a quarantine table with its original Bronze text and the name of every rule it broke. Run the notebooks in [`scripts/silver/`](./scripts/silver) in this order:
+
+| Order | Notebook | Reads | Writes |
+| --- | --- | --- | --- |
+| 1 | `transform_boundaries` | `bronze.community_area_boundaries` | `silver.community_area_boundaries` |
+| 2 | `transform_iucr` | `bronze.iucr_codes` | `silver.ref_iucr` |
+| 3 | `transform_crimes` | `bronze.crimes` + the two reference tables above | `silver.crimes`, `silver.crimes_quarantine`, `silver.load_control` |
+
+What `transform_crimes` does, in short (details in [`06_Component Breakdown`](./docs/06_component_breakdown.md), reasons in [`05_Design Decisions`](./docs/05_design_decisions.md)):
+
+1. reads only the Bronze rows loaded since the last watermark (`_ingested_at`, saved in `silver.load_control`)
+2. runs 11 groups of data checks (schema, text, types, key and duplicates, required columns, ranges, formats, reference values, relations between columns, `date`/`block` decomposition, row counts)
+3. writes the rows that broke a rule to `silver.crimes_quarantine`, and stops the run when more than `MAX_QUARANTINE_PCT` % of the batch is quarantined
+4. keeps the newest version of every `id` and writes the rest to `silver.crimes` with `MERGE INTO`
+5. moves the watermark forward only after both writes succeeded, so a failed run can simply be run again
+
+
+### 4. Gold Layer - **NOT STARTED YET**
+
+The design is finished ([`03_Star Schema Design`](./docs/03_star_schema_design.md)): `fact_crime` with `dim_date`, `dim_time`, `dim_location`, `dim_block`, `dim_crime_type`, `dim_arrest_status` (SCD Type 2) and `dim_location_description`.
+
+### 5. Orchestration and deployment - **NOT STARTED YET**
+
+Azure Data Factory triggers the Databricks Workflow (Bronze -> Silver -> Gold) on a schedule, and GitHub Actions deploys the notebooks. Neither is built yet.
+
