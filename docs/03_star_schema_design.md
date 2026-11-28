@@ -1,6 +1,6 @@
 # ⭐️ Star Schema Design (Gold Layer) - Kimball's 4-Step Dimensional Design Process
 
-This document designs the Gold Layer Star Schema following Ralph Kimball's 4-step process)
+This document designs the Gold Layer Star Schema following Ralph Kimball's 4-step process.
 
 ![Star Schema](./star_schema.png)
 
@@ -34,7 +34,7 @@ This document designs the Gold Layer Star Schema following Ralph Kimball's 4-ste
 |---|---|---|---|
 |`date_key`|int|derived from `full_date`|Surrogate key, format `YYYYMMDD` (year first so the integer sorts chronologically), generated from `full_date` (**USE AS A FK FOR JOIN ONLY!!**)|
 |`full_date`|date|`incident_date` from `silver.crimes` (the date part of `date`)|`SELECT explode(sequence(DATE'2001-01-01', DATE'2040-12-31', INTERVAL 1 DAY)) AS full_date`. Starts in 2001 because incidents from 2001 can be in the warehouse (see `01_business_context.md`)|
-|`date_description`|string|derived from `full_date`|Human-readable full date, e.g. "Monday, January 1, 2024"|
+|`date_description`|string|derived from `full_date`|Human-readable full date, e.g. "1 January 2024"|
 |`day`|tinyint|derived from `full_date`||
 |`month`|tinyint|derived from `full_date`||
 |`month_name`|string|mapped from `month`||
@@ -104,11 +104,11 @@ This document designs the Gold Layer Star Schema following Ralph Kimball's 4-ste
 |`arrest_status_key`|int|derived|Surrogate key|
 |`case_number`|string|`case_number` from `silver.crimes`|Kept here (not just on the fact table) so the full status-change history for a case can be queried directly by `case_number`|
 |`arrest_flag`|string|`arrest` from `silver.crimes` (a boolean in Silver)|Text values: "Arrest Made", "No Arrest" — per Kimball's "Flags and Indicators as Textual Dimension Attributes" technique, not a raw boolean/0-1|
-|`domestic_flag`|string|`domestic` from `silver.crimes` (a boolean in Silver)|Text values: "Domestic", "No Domestic"|
+|`domestic_flag`|string|`domestic` from `silver.crimes` (a boolean in Silver)|Text values: "Domestic", "Not Domestic"|
 |`effective_date`|timestamp|derived from `updated_on`|Set to the `updated_on` value at the load cycle when this version of the row was created|
 |`end_date`|timestamp|derived|Set to the next version's `effective_date` when a newer version is inserted; `null` while the row is still current|
 |`is_current`|boolean|derived|Maintained by the SCD 2 MERGE logic; exactly one row per `case_number` has `is_current = true` at any time|
-|`version_source`|string|derived|`BACKFILL` for records from initial load, `DETECTED_CHANGE` for an actual detected change|
+|`version_source`|string|derived|`BACKFILL` for records from initial load, `DETECTED_CHANGE` for an actual detected change and `NEW_CASE` for the first version of a case that appears in a later incremental run|
 
 > **Why SCD Type 2**: arrest status can change retroactively, so history must be preserved to calculate "average time-to-arrest",
 > which is a direct business question.
@@ -127,13 +127,13 @@ This document designs the Gold Layer Star Schema following Ralph Kimball's 4-ste
 |Column|Type|Fact type|Source|Notes|
 |---|---|---|---|---|
 |`id`|bigint|-|`id` from `silver.crimes`|Primary Key; kept as-is from source — no separate surrogate key needed for the fact table. `bigint` because Silver stores it as `bigint`|
-|`case_number`|string|Degenerate Dimension|`case_number` from `silver.crimes`|Also appears in `dim_arrest_status`, but for a different purpose — this one is a stable, grouping/tracing identifier at the fact's own grain, independent of the mutable `arrest_status_key` FK (which gets rewritten every time the arrest status changes)|
+|`case_number`|string|Degenerate Dimension|`case_number` from `silver.crimes`|Also appears in `dim_arrest_status`, but for a different purpose — this one is a stable, grouping/tracing identifier at the fact's own grain|
 |`incident_date_key`|int (FK)|-|Derived|Named by business role, not just "date_key" (Role-Playing Dimension naming) → `dim_date.date_key`|
 |`incident_time_key`|tinyint (FK)|-|Derived|→ `dim_time.time_key`|
 |`location_key`|int (FK)|-|Derived|→ `dim_location.location_key`|
 |`block_key`|int (FK)|-|Derived|→ `dim_block.block_key`|
 |`crime_type_key`|int (FK)|-|Derived|→ `dim_crime_type.crime_type_key`|
-|`arrest_status_key`|int (FK)|-|Derived|→ `dim_arrest_status.arrest_status_key`; always points to the row where `is_current=true` for that case. **1st**: close the existing current row — set `end_date` to the new `effective_date` and `is_current=false`. **2nd**: insert the new current row with `is_current=true`. **3rd**: update `fact_crime.arrest_status_key` for that `case_number` to the newly inserted row's key|
+|`arrest_status_key`|int (FK)|-|Derived|→ `dim_arrest_status.arrest_status_key`; always points to the row where `is_current=true` for that case|
 |`location_description_key`|int (FK)|-|Derived|→ `dim_location_description.location_description_key`|
 |`x_coordinate`|double|Non-additive Fact|`x_coordinate` from `silver.crimes`|State Plane coordinate; can be NULL. A row with a coordinate of `0` or outside the allowed range is quarantined in Silver, so the fact never contains `0`|
 |`y_coordinate`|double|Non-additive Fact|`y_coordinate` from `silver.crimes`|Same as above|
