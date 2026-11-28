@@ -75,9 +75,18 @@ What `transform_crimes` does, in short (details in [`06_Component Breakdown`](./
 5. moves the watermark forward only after both writes succeeded, so a failed run can simply be run again
 
 
-### 4. Gold Layer - **NOT STARTED YET**
+### 4. Gold Layer
 
-The design is finished ([`03_Star Schema Design`](./docs/03_star_schema_design.md)): `fact_crime` with `dim_date`, `dim_time`, `dim_location`, `dim_block`, `dim_crime_type`, `dim_arrest_status` (SCD Type 2) and `dim_location_description`.
+Gold turns the checked rows of Silver into the star schema of [`03_Star Schema Design`](./docs/03_star_schema_design.md): one fact table, seven dimensions and a copy of the community-area boundaries. One notebook loads all of it, [`scripts/gold/load_crimes`](./scripts/gold/load_crimes.ipynb), and it runs after the three Silver notebooks. It uses the Gold part of [`scripts/helpers`](./scripts/helpers.ipynb).
+
+| Table | Built from | Load pattern |
+| --- | --- | --- |
+| `gold.dim_date`, `gold.dim_time` | generated: every day from 2001-01-01 to 2040-12-31, and the 24 hours of a day | rebuilt in full (overwrite) |
+| `gold.ref_community_area_boundaries` | `silver.community_area_boundaries` | rebuilt in full (overwrite) |
+| `gold.dim_crime_type`, `gold.dim_location_description`, `gold.dim_block`, `gold.dim_location` | `silver.crimes` (`dim_location` also uses `gold.ref_community_area_boundaries` for the community-area name) | append-only: only combinations that are not in the table yet are added, each with the next surrogate key |
+| `gold.dim_arrest_status` | `silver.crimes` | SCD Type 2 with `MERGE INTO`: a changed arrest or domestic flag closes the current row and adds a new one |
+| `gold.fact_crime` | `silver.crimes` and the dimensions above | `MERGE INTO` on `id`: a row is replaced only when its `updated_on` is not older |
+| `gold.load_control` | - | one row per table (`crimes`) holding the watermark |
 
 ### 5. Orchestration and deployment - **NOT STARTED YET**
 
