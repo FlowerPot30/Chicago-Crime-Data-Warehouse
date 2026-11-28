@@ -4,16 +4,27 @@ This project was built to practice real-world data engineering skills by designi
 
 ## 📚 Project Overview
 
-This project starts from real business questions about crime in Chicago, not from the tools. Using **Chicago Crime Data** and **Boundaries - Community Areas** sourced via the **Socrata Open Data API (SODA)** on the Chicago Data Portal, the pipeline ingests and transforms the data into a Data Warehouse, which is then used to answer those business questions through a Power BI dashboard.
+This project starts from real business questions about crime in Chicago, not from the tools. Using **Chicago Crime Data** and **Boundaries - Community Areas** sourced via the **Socrata Open Data API (SODA)** on the Chicago Data Portal, the pipeline ingests and transforms the data into a Data Warehouse, which is then used to answer those business questions through a Power BI dashboard (the dashboard is planned, see [Project Status](#-project-status)).
+
+## 🚦 Project Status
+
+| Part | Status |
+| --- | --- |
+| 1. Setup environment | Done |
+| 2. Bronze layer | Done |
+| 3. Silver layer | Done |
+| 4. Gold layer (star schema) | Done |
+| 5. Orchestration (Databricks Workflows, daily Job) | Done |
+| 6. Governance (Unity Catalog groups, permissions, comments, lineage) | Done |
+| 7. Deployment (GitHub Actions) and Power BI dashboard | Not started yet |
 
 ## 📂 Table of Contents
 
 -  [`01_Business Context`](./docs/01_business_context.md)
 -  [`02_Source Data Dictionary`](./docs/02_sources_data_dictionary.md)
 -  [`03_Star Schema Design`](./docs/03_star_schema_design.md)
--  [`04_Data Architecture`](./docs/04_data_architecture.md)
--  [`05_Design Decisions`](./docs/05_design_decisions.md)
--  [`06_Component Breakdown`](./docs/06_component_breakdown.md)
+
+Documents on the data architecture, design decisions and component breakdown are planned but not written yet.
 
 ## 🕹️ Technology Used
 
@@ -21,11 +32,13 @@ This project starts from real business questions about crime in Chicago, not fro
 | --- | --- |
 | Azure Key Vault | Securely stores the Socrata App Token; Databricks retrieves it via a Secret Scope |
 | Azure Data Lake Storage Gen2 | Stores data for every layer (Bronze/Silver/Gold) following the Medallion Architecture |
-| Databricks (Notebook + Workflows) | Processes data with PySpark and orchestrates the Bronze -> Silver -> Gold sequence |
-| Unity Catalog | Governance - manages catalog/schema/table permissions |
-| Entra ID / Managed Identity | Authentication between ADF <-> Databricks <-> ADLS without using connection strings or keys |
-| GitHub Actions | Deploys notebook code to Databricks (lightweight CI/CD) |
-| Power BI | Dashboard that answers business questions using data from the Gold layer |
+| Databricks (Notebook + Workflows) | Processes data with PySpark on serverless compute and orchestrates the daily Bronze -> Silver -> Gold run as one Job (schedule, task order, retries, failure email) |
+| Unity Catalog | Governance - groups, catalog/schema/table permissions, table comments and automatic lineage |
+| Entra ID / Managed Identity | Authentication between Databricks and ADLS (through the Access Connector) without using connection strings or keys |
+| GitHub Actions | *(planned)* Deploys notebook code to Databricks (lightweight CI/CD) |
+| Power BI | *(planned)* Dashboard that answers business questions using data from the Gold layer |
+
+Azure Data Factory is **not** used: ingestion and the watermarks live inside the notebooks, so Databricks Workflows is enough to orchestrate. The reasons are in [5. Orchestration](#5-orchestration---databricks-workflows).
 
 ## ▶️ How to implement the project
 
@@ -47,25 +60,25 @@ This project starts from real business questions about crime in Chicago, not fro
 
 Bronze keeps the source data exactly as it arrived: every column is stored as text and nothing is cleaned. Run the notebooks is [`scripts/bronze/`](./scripts/bronze)
 
-| Notebook | Source | Writes | Load pattern |
-| --- | --- | --- | --- |
-| `ingest_boundaries` | Boundaries - Community Areas (`igwz-8jzy`) | `bronze.community_area_boundaries` | full load, overwrite |
-| `ingest_iucr` | CPD IUCR Codes (`c7ck-438e`) | `bronze.iucr_codes` | full load, overwrite |
-| `ingest_crimes` | Crimes - 2001 to Present (`ijzp-q8t2`) | `bronze.crimes` (append-only) and `bronze.load_control` | incremental: rows with `updated_on` after the saved watermark, read in 30-day chunks |
+| Notebook | Source | Writes | Load pattern | In the daily Job? |
+| --- | --- | --- | --- | --- |
+| `ingest_boundaries` | Boundaries - Community Areas (`igwz-8jzy`) | `bronze.community_area_boundaries` | full load, overwrite | No, run by hand when the boundaries change (see [5. Orchestration](#5-orchestration---databricks-workflows)) |
+| `ingest_iucr` | CPD IUCR Codes (`c7ck-438e`) | `bronze.iucr_codes` | full load, overwrite | Yes |
+| `ingest_crimes` | Crimes - 2001 to Present (`ijzp-q8t2`) | `bronze.crimes` (append-only) and `bronze.load_control` | incremental: rows with `updated_on` after the saved watermark, read in 30-day chunks | Yes |
 
 `ingest_crimes` starts from `updated_on > 2015-01-01` on the first run. It filters on `updated_on`, not on the incident date, so incidents from before 2015 are included when their record was updated after that date (see [`01_Business Context`](./docs/01_business_context.md)).
 
 ### 3. Silver Layer 
 
-Silver turns the text of Bronze into typed, checked data. A row that breaks a rule is **never fixed by guessing**: the whole row goes to a quarantine table with its original Bronze text and the name of every rule it broke. Run the notebooks in [`scripts/silver/`](./scripts/silver) in this order:
+Silver turns the text of Bronze into typed, checked data. A row that breaks a rule is **never fixed by guessing**: the whole row goes to a quarantine table with its original Bronze text and the name of every rule it broke. The notebooks are in [`scripts/silver/`](./scripts/silver). The first time, run them in this order (the daily Job later runs only the last two):
 
-| Order | Notebook | Reads | Writes |
-| --- | --- | --- | --- |
-| 1 | `transform_boundaries` | `bronze.community_area_boundaries` | `silver.community_area_boundaries` |
-| 2 | `transform_iucr` | `bronze.iucr_codes` | `silver.ref_iucr` |
-| 3 | `transform_crimes` | `bronze.crimes` + the two reference tables above | `silver.crimes`, `silver.crimes_quarantine`, `silver.load_control` |
+| Order | Notebook | Reads | Writes | In the daily Job? |
+| --- | --- | --- | --- | --- |
+| 1 | `transform_boundaries` | `bronze.community_area_boundaries` | `silver.community_area_boundaries` | No, run by hand when the boundaries change |
+| 2 | `transform_iucr` | `bronze.iucr_codes` | `silver.ref_iucr` | Yes |
+| 3 | `transform_crimes` | `bronze.crimes` + the two reference tables above | `silver.crimes`, `silver.crimes_quarantine`, `silver.load_control` | Yes |
 
-What `transform_crimes` does, in short (details in [`06_Component Breakdown`](./docs/06_component_breakdown.md), reasons in [`05_Design Decisions`](./docs/05_design_decisions.md)):
+What `transform_crimes` does, in short:
 
 1. reads only the Bronze rows loaded since the last watermark (`_ingested_at`, saved in `silver.load_control`)
 2. runs 11 groups of data checks (schema, text, types, key and duplicates, required columns, ranges, formats, reference values, relations between columns, `date`/`block` decomposition, row counts)
@@ -76,7 +89,7 @@ What `transform_crimes` does, in short (details in [`06_Component Breakdown`](./
 
 ### 4. Gold Layer
 
-Gold turns the checked rows of Silver into the star schema of [`03_Star Schema Design`](./docs/03_star_schema_design.md): one fact table, seven dimensions and a copy of the community-area boundaries. One notebook loads all of it, [`scripts/gold/load_crimes`](./scripts/gold/load_crimes.ipynb), and it runs after the three Silver notebooks. It uses the Gold part of [`scripts/helpers`](./scripts/helpers.ipynb).
+Gold turns the checked rows of Silver into the star schema of [`03_Star Schema Design`](./docs/03_star_schema_design.md): one fact table, seven dimensions and a copy of the community-area boundaries. One notebook loads all of it, [`scripts/gold/load_crimes`](./scripts/gold/load_crimes.ipynb), and in the daily Job it runs right after `transform_crimes` (the first time, run it after all three Silver notebooks). It uses the Gold part of [`scripts/helpers`](./scripts/helpers.ipynb).
 
 | Table | Built from | Load pattern |
 | --- | --- | --- |
@@ -87,7 +100,73 @@ Gold turns the checked rows of Silver into the star schema of [`03_Star Schema D
 | `gold.fact_crime` | `silver.crimes` and the dimensions above | `MERGE INTO` on `id`: a row is replaced only when its `updated_on` is not older |
 | `gold.load_control` | - | one row per table (`crimes`) holding the watermark |
 
-### 5. Orchestration and deployment - **NOT STARTED YET**
+### 5. Orchestration - Databricks Workflows
 
-Azure Data Factory triggers the Databricks Workflow (Bronze -> Silver -> Gold) on a schedule, and GitHub Actions deploys the notebooks. Neither is built yet.
+One Databricks Job, `chicago-crime-daily`, runs the pipeline once a day. It has five tasks. Each task is one notebook, runs on serverless compute and uses the notebook from the Git folder in the workspace.
+
+```
+ingest_crimes ─┐
+               ├→ transform_iucr ─┐
+ingest_iucr ───┘                  ├→ transform_crimes → load_crimes
+ingest_crimes ────────────────────┘
+```
+
+| Task | Notebook | Waits for |
+| --- | --- | --- |
+| `ingest_crimes` | `scripts/bronze/ingest_crimes` | - |
+| `ingest_iucr` | `scripts/bronze/ingest_iucr` | - |
+| `transform_iucr` | `scripts/silver/transform_iucr` | `ingest_iucr`, `ingest_crimes` |
+| `transform_crimes` | `scripts/silver/transform_crimes` | `transform_iucr`, `ingest_crimes` |
+| `load_crimes` | `scripts/gold/load_crimes` | `transform_crimes` |
+
+**Job settings and why**
+
+- **A task runs only when every task it waits for succeeded.** If one fails, the tasks after it show "Upstream failed", so Silver and Gold never work on a half-loaded Bronze.
+- **The whole Bronze layer must pass before Silver starts:** `transform_iucr` waits for both ingest tasks. `transform_crimes` also lists `ingest_crimes` itself, so it does not depend on an indirect link that someone could remove later.
+- **Retries on the two ingest tasks**, because they call an outside API that can fail for a moment. A retry is safe: `ingest_crimes` writes and saves its watermark chunk by chunk, so it continues where it stopped, and `ingest_iucr` is an overwrite that gives the same result every time.
+- **One run at a time:** two runs together would read and move the same watermark.
+- **Email on failure**, because nobody watches a scheduled run.
+- **No condition or for-each tasks:** the notebooks already decide for themselves. They exit early when there is nothing new, and `transform_crimes` stops when too many rows are quarantined. Adding the same rules in the Job would mean two sets of rules to keep equal.
+- **Run modes:** every notebook starts in `incremental` by default, so the Job sets no parameters. The Bronze notebook offers `incremental` / `manual_backfill`, and Silver and Gold offer `incremental` / `full_reprocess` (different choices, so one shared parameter is not possible). `manual_backfill` does not move the watermark: use it by hand only, never in the schedule.
+
+**Running it again with no new data:** every task succeeds, and `transform_crimes` and `load_crimes` exit early because there are no rows after the watermark. This is the proof that the incremental load works.
+
+**Why the two reference tables are not treated the same**
+
+- **Community-area boundaries** (77 areas) almost never change and `silver.community_area_boundaries` stays in its table, so `ingest_boundaries` and `transform_boundaries` are run by hand when the boundaries change.
+- **IUCR codes** are refreshed every day because the police can add new codes. A crime with a code that is not yet in `silver.ref_iucr` is quarantined by the reference-value check, so a fresh list lowers that risk.
+
+**Why not Azure Data Factory**
+
+Ingestion (the API calls, the 30-day chunks, the checkpoint after each chunk) and every watermark live inside the notebooks. ADF would only start the Job and pass a parameter, which the schedule of Workflows already does. The strengths of ADF (Copy activity with ready-made connectors, a self-hosted integration runtime, event triggers) are not needed here. It can be added later if a new source needs them.
+
+**First-time set-up order:** `ingest_boundaries`, `ingest_iucr`, `ingest_crimes` (the first run is the backfill from 2015), then `transform_boundaries`, `transform_iucr`, `transform_crimes`, then `load_crimes`. After that, create the Job with the five tasks above.
+
+### 6. Governance - Unity Catalog
+
+Permissions are given to groups, not to people, so a person can join or leave without changing any permission. The SQL is in [`scripts/governance/grants`](./scripts/governance/grants.ipynb).
+
+| Group | Catalog `chicago_crime` | `bronze` | `silver` | `gold` |
+| --- | --- | --- | --- | --- |
+| `data_engineers` | `USE CATALOG` | all privileges | all privileges | all privileges |
+| `analysts` | `USE CATALOG` | none | none | `USE SCHEMA` + `SELECT` |
+
+- **Least privilege:** the people who read reports see only Gold. They cannot see raw data or the quarantine table. Unity Catalog denies everything that is not granted, so nothing has to be forbidden.
+- **Reading a table needs all three levels:** `USE CATALOG`, `USE SCHEMA` and `SELECT`. `SELECT` on the `gold` schema covers every table in it, including tables added later, and also `gold.load_control` (the watermark table, harmless but not meant for analysis).
+- **Comments:** every one of the 10 Gold tables has a table comment, so anyone browsing the catalog sees what the table is. The tables for the pipeline itself (`gold.load_control`) are marked as not for analysis.
+- **Lineage:** Unity Catalog records it automatically from the Job runs (Catalog > table > Lineage), so the path from `bronze.crimes` to `gold.fact_crime` can be seen without any set-up.
+- **Left out on purpose:** row filters and column masks (the data is open data with nothing to hide row by row) and audit logs from system tables.
+- The Job runs as its owner, so the tables belong to that user. The two groups are the base for other people who will use the warehouse.
+
+### 7. Deployment and dashboard - **NOT STARTED YET**
+
+GitHub Actions will deploy the notebooks to Databricks, and a Power BI dashboard on the Gold layer will answer the questions in [`01_Business Context`](./docs/01_business_context.md). Neither is built yet.
+
+## ⚠️ Known limitations (accepted)
+
+- **Scope starts in 2015:** the first run reads rows whose `updated_on` is after 2015-01-01, so older incidents appear only if their record was updated later.
+- **Fixed column list in Bronze:** `ingest_crimes` keeps only the 22 columns it knows. A new column added by the source would be dropped without any warning.
+- **Gold dimensions are append-only:** if an attribute of an existing key changes at the source, the dimension row is not updated. `dim_arrest_status` is the exception, it keeps history with SCD Type 2.
+- **Arrest status of a whole case:** when the status of a case changes, only the fact rows in the same run get the new `arrest_status_key`. Other offenses of that case keep the old key. This matters only for cases whose offenses have different `arrest` values, which is very rare.
+- **Time to arrest** is reliable only for changes detected after the pipeline started, because earlier changes cannot be seen from the source API.
 
