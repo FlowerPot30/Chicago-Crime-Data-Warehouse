@@ -1,6 +1,6 @@
 # Chicago Crime Data Warehouse and Dashboard
 
-This project was built to practice real-world data engineering skills by designing and implementing a Data Warehouse using tools that are actively in demand in the industry — Azure Data Factory, Databricks, Unity Catalog and Power BI
+This project was built to practice real-world data engineering skills by designing and implementing a Data Warehouse using tools that are actively in demand in the industry — Databricks, Unity Catalog and Power BI
 
 ## 📚 Project Overview
 
@@ -19,7 +19,6 @@ This project starts from real business questions about crime in Chicago, not fro
 
 | Tool | Role in this project |
 | --- | --- |
-| Azure Data Factory | Orchestration - trigger pipeline on a schedule and passes parameters into Databricks Notebook |
 | Azure Key Vault | Securely stores the Socrata App Token; Databricks retrieves it via a Secret Scope |
 | Azure Data Lake Storage Gen2 | Stores data for every layer (Bronze/Silver/Gold) following the Medallion Architecture |
 | Databricks (Notebook + Workflows) | Processes data with PySpark and orchestrates the Bronze -> Silver -> Gold sequence |
